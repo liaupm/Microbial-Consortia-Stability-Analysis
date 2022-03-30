@@ -1,0 +1,332 @@
+//#################################################
+//############# INITIAL PARAMETERS ################
+//#################################################
+
+include gro_elegro1-2-3
+
+set ("dt", 0.1);
+set ("population_max", 2000000);
+set ("signals", 1.0); //0.0: off, 1.0: on
+set ("signals_draw", 1.0); //0.0: off, 1.0: on
+
+grid(2001, 5, 0);
+
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# MOLECULES #########################
+//#################################################
+
+
+molecule([ name := "B1bact", expression_times := [mean_times := {10.0, 5.0}] ]);
+
+molecule([ name := "B2bact", expression_times := [mean_times := {10.0, 5.0}] ]);
+
+molecule([ name := "B3bact", expression_times := [mean_times := {10.0, 5.0}] ]);
+
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# LOGIC GATES #######################
+//#################################################
+
+gate([ name := "gaTrue", function := "TRUE", input := {} ]);
+
+gate([ name := "gaStrain1", function := "YES", input := {"Strain1"} ]); 
+
+gate([ name := "gaStrain2", function := "YES", input := {"Strain2"} ]);
+
+gate([ name := "gaStrain3", function := "YES", input := {"Strain3"} ]);
+
+gate([ name := "gaB1", function := "YES", input := {"B1bact"} ]);
+
+gate([ name := "gaB2", function := "YES", input := {"B2bact"} ]);
+
+gate([ name := "gaB3", function := "YES", input := {"B3bact"} ]);
+
+gate([ name := "pB1", function := "YES", input := {"-metStrain1_0_0"} ]);
+
+gate([ name := "pB2", function := "YES", input := {"-metStrain2_0_0"} ]);
+
+gate([ name := "pB3", function := "YES", input := {"-metStrain3_1_0"} ]);
+
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# PLASMIDS ##########################
+//#################################################
+
+
+operon([ name := "op1", gate := "pB1", output := {"B1bact"} ]);
+
+plasmid([ name := "p1", operons := {"op1"} ]);
+
+operon([ name := "op2", gate := "pB2", output := {"B2bact"} ]);
+
+plasmid([ name := "p2", operons := {"op2"} ]);
+
+
+operon([ name := "op3", gate := "pB3", output := {"B3bact"} ]);
+
+plasmid([ name := "p3", operons := {"op3"} ]);
+
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# SIGNALS   #########################
+//#################################################
+
+
+signal([ name := "B1", kdiff := 0.6, kdeg := 0.5, pad := 10.0 ]);
+
+signal([ name := "B2", kdiff := 0.6, kdeg := 0.5, pad := 10.0 ]);
+
+signal([ name := "B3", kdiff := 0.6, kdeg := 0.5, pad := 10.0 ]);
+
+signal([ name := "A1", kdiff := 0.6, kdeg := 0.3, pad := 10.0 ]);
+
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# METABOLISM #########################
+//#################################################
+
+
+//STRAIN 1
+
+metabolism ([   name := "B1out",
+		gate := "gaB1",
+		flux := [ metabolite := "B1", f := [ bias := 0.1]]
+]);
+
+
+metabolism ([name := "metStrain1",
+		  gate := "gaStrain1",
+		  metabolites := {"A1", "B1", "biomass"},
+		  fluxes := {"A1in", "B1in", "biomass"},
+
+A1in := [metabolite := "A1",
+	   functions := {"f1", "f2"},
+	   f1 := [ metabolites := {"A1"}, metabolites_w :=     	   {-0.2}, bias := 0.5 ],
+	   f2 := [ bias := 0.0],
+	   tree := [ A1 := 0.3, up := "f1", low := "f2"]  ],
+
+B1in := [metabolite := "B1",
+	   functions := {"f3", "f4"},
+	   f3 := [ metabolites := {"B1"}, metabolites_w :=     	   {-0.2}, bias := 0.5 ],
+	   f4 := [ bias := 0.0],
+	   tree := [ B1 := 0.3, up := "f3", low := "f4"]  ],
+
+biomass := [ metabolite := "biomass",
+           f := [ fluxes := {"B1in"},
+           fluxes_w := {-0.05}, bias := 0.0 ] ]
+
+]);
+
+
+
+
+//STRAIN 2
+
+
+metabolism ([   name := "B2out",
+		gate := "gaB2",
+		flux := [ metabolite := "B2", f := [ bias := 0.1]	] 
+]);
+
+metabolism ([name := "metStrain2",
+		  gate := "gaStrain2",
+		  metabolites := {"A1", "B2", "biomass"},
+		  fluxes := {"A1in", "B2in", "biomass"},
+
+A1in := [metabolite := "A1",
+	   functions := {"f1", "f2"},
+	   f1 := [ metabolites := {"A1"}, metabolites_w :=     	   {-0.2}, bias := 0.5 ],
+	   f2 := [ bias := 0.0],
+	   tree := [ A1 := 0.3, up := "f1", low := "f2"]  ],
+
+B2in := [metabolite := "B2",
+	   functions := {"f3", "f4"},
+	   f3 := [ metabolites := {"B2"}, metabolites_w :=     	   {-0.2}, bias := 0.5 ],
+	   f4 := [ bias := 0.0],
+	   tree := [ B2 := 0.3, up := "f3", low := "f4"]  ],
+
+biomass := [ metabolite := "biomass",
+           f := [ fluxes := {"B2in"},
+           fluxes_w := {-0.05}, bias := 0.0 ] ]
+
+]);
+
+
+
+//STRAIN 3
+
+metabolism ([   name := "B3out",
+		gate := "gaB3",
+		flux := [ metabolite := "B3", f := [ bias := 0.1]	] 
+]);
+
+
+metabolism ([name := "metStrain3",
+		  gate := "gaStrain3",
+		  metabolites := {"A1", "B3", "biomass"},
+		  fluxes := {"A1out", "A1in", "B3in", "biomass"},
+
+A1out := [metabolite := "A1", f :=[ bias :=0.4]],
+
+A1in := [metabolite := "A1",
+	   functions := {"f1", "f2"},
+	   f1 := [ metabolites := {"A1"}, metabolites_w :=     	   {-0.2}, bias := 0.5 ],
+	   f2 := [ bias := 0.0],
+	   tree := [ A1 := 0.3, up := "f1", low := "f2"]  ],
+
+B3in := [metabolite := "B3",
+	   functions := {"f3", "f4"},
+	   f3 := [ metabolites := {"B3"}, metabolites_w :=     	   {-0.2}, bias := 0.5 ],
+	   f4 := [ bias := 0.0],
+	   tree := [ B3 := 0.3, up := "f3", low := "f4"]  ],
+
+biomass := [ metabolite := "biomass",
+           f := [ fluxes := {"B3in"},
+           fluxes_w := {-0.05}, bias := 0.0 ] ]
+
+]);
+
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# STRAINS #########################
+//#################################################
+
+
+
+strain([ name := "Strain1", 
+		cell_growth := [ base_growth_rate_rdn := [ dist_params := {0.015, 0.0} ], metabolism_growth := 1 ] ]);
+
+	
+strain([ name := "Strain2", 
+		cell_growth := [ base_growth_rate_rdn := [ dist_params := {0.015, 0.0} ], metabolism_growth := 1 ] ]);	
+	
+strain([ name := "Strain3", 
+		cell_growth := [ base_growth_rate_rdn := [ dist_params := {0.015, 0.0} ], metabolism_growth := 1 ] ]);
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# COLORS #########################
+//#################################################
+
+
+
+// Azul oscuro pastel
+color([ gate := "gaStrain1", channels := {158,119,0,203}, delta := 0]);
+
+// Lila
+color([ gate := "gaStrain2", channels := {149,182,0,192}, delta := 0]);
+
+// Azul claro
+color([ gate := "gaStrain3", channels := {176,12,0,169}, delta := 0]);
+
+
+
+gate([ name := "gaA1inS1", function := "YES", input := {"metStrain1_0_0"} ]);
+
+//Amarillo
+color([ gate := "gaA1inS1", channels := {0,0,200,0}, delta := 0]);
+
+gate([ name := "gaA1inS2", function := "YES", input := {"metStrain2_0_0"} ]);
+
+//Verde pastel
+color([ gate := "gaA1inS2", channels := {255,152,0,152}, delta := 0]);
+
+gate([ name := "gaA1inS3", function := "YES", input := {"metStrain3_1_0"} ]);
+
+//Rosa-Naranja
+color([ gate := "gaA1inS3", channels := {153,255,0,102}, delta := 0]);
+
+
+
+
+
+
+//-------------------------------------------------------
+
+//#################################################
+//############# OUTPUT ############################
+//#################################################
+
+
+output_path := "C:\Users\elenu\Documents\output_gro\";
+output_timing := [ output_time_start := 0.0, output_time_stop := 1000000.0, period := 10 ];
+
+
+output([ path := output_path, file_name := "m4125_output",
+						gate := "gaTrue",
+						population_level := 1,
+						timing := output_timing,
+						decimal_places := 2,
+						fields := {"molecule"}, molecule := {"Strain1", "Strain2", "Strain3"}]);
+
+
+
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# LOAD GENETIC CIRCUITS #############
+//#################################################
+
+
+load_gen([ auto_gates := 0 ]);
+
+
+program p() := 
+{
+	selected: {die()};
+    skip();
+};
+
+program main() :=
+{
+   skip();
+};
+
+
+//-------------------------------------------------------
+
+
+//#################################################
+//############# ECOLIS ############################
+//#################################################
+
+
+
+ecolis( [ num := 1, x := 0.0, y := 0.0, r := 50.0, 
+		strain := "Strain1", plasmids := {"p1"}, molecules := {}, mode := "default" ], program p());
+
+	  
+ecolis( [ num := 1, x := 0.0, y := 0.0, r := 50.0, 
+		strain := "Strain2", plasmids := {"p2"}, molecules := {} ], program p()); 
+
+ecolis( [ num := 1, x := 0.0, y := 0.0, r := 50.0, 
+		strain := "Strain3", plasmids := {"p3"}, molecules := {} ], program p()); 
+
+
+
+
+
+

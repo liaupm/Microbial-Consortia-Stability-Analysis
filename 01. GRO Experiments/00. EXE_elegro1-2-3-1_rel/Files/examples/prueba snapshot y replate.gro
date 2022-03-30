@@ -1,0 +1,115 @@
+include gro_elegro1-2-3
+set_theme(dark_theme);
+
+set ("dt", 0.1 );
+set ("population_max", 2000000 );
+set ("signals", 1 ); //0.0: off, 1.0: on
+set ("signals_draw", 1 ); //0.0: off, 1.0: on
+set ("seed", 2);
+
+
+grid(2001, 5, 0); //(max size, unit size, diffusion algorithm: 0 = gro original)
+
+t_activation := 10.0;
+t_degradation := 5.0;
+
+growth_rate := "0.001";
+
+
+//========================================================= *genetic circuits* ====================================
+
+molecule([ name := "mA", 								
+	expression_times := [ mean_times := {t_degradation,t_activation} ]
+]);
+
+//---------------------------------------------------
+gate([ name := "gaTrue",								
+	function := "TRUE",											
+	input := {}
+]);
+
+gate([ name := "gaYesA",								
+	function := "YES",											
+	input := {"mA"}
+]);
+
+plasmid([ name := "p0" ]);
+plasmid([ name := "p1" ]);
+
+//---------------------------------------------------
+strain([ name := "wt", cell_growth := [ metabolism_growth := 0, base_growth_rate_rdn := [ dist_params := {0.005, 0.0005} ] ] ]);
+
+gate([ name := "gaYes_p0",								
+	function := "YES",
+	input_type := "plasmid",
+	input := {"p0"}
+]);
+
+math_function([ name := "f0", 
+					node := [ bias := -1.0, inputs := {"q_plasmid.p0"}, w := {1.0} ]
+]);
+
+qgate([ name := "qga0",
+		function := "f0", 
+		comparison_operator := "<"
+]);
+
+math_function([ name := "f1", 
+					node := [ bias := 0.0, inputs := {"initial_time"}, w := {1.0} ]
+]);
+
+
+path0 := "C:\swLIA\pruebas\";
+output_timing := [ output_time_start := 0.0, output_time_stop := 1000.0, period := 10 ];
+snapshot_timing := [ output_time_start := 1000.0, output_time_stop := 100000.0, period := 1000 ];
+replate_timing := [ output_time_start := 1000.0, output_time_stop := 100000.0, period := 1000 ];
+
+output([ path := path0, file_name := "outIndividual", 
+					gate := "gaTrue",
+					timing := output_timing, 
+					decimal_places := 2,
+					fields := {"plasmid", "f0", "f1"}, plasmid := {"p0", "p1"}
+]);
+
+output([ path := path0, file_name := "outPopulation", 
+					gate := "gaTrue", population_level := 1,
+					timing := output_timing,
+					decimal_places := 2,
+					fields := {"plasmid", "f0" }, plasmid := {"p0", "p1"}
+]);
+
+
+output_snapshot([ path := path0, file_name := "outSnapshots", 
+					timing := snapshot_timing,
+					format := ".png"
+]);
+
+color([ gate := "qga0", channels := {0,0,0,1000}, delta := 0]);
+
+replating([ alive_fraction := 0.8,
+			alive_fraction_var := 0.1,
+			timing := replate_timing,
+			new_location := [ x := 0.0, y := -200.0, r := 300.0, mode := "polar" ]
+]);
+
+load_gen([ auto_gates := 0 ]);
+
+
+
+
+//=============================================== *end of genetic circuits* ====================================
+
+
+program p() := 
+{
+	selected : { die(); }
+    skip();
+};
+
+program main() :=
+{
+   skip();
+};
+
+ecolis( [ num := 1, x := -300.0, y := 0.0, r := 10.0, strain := "wt", plasmids := {"p0", "p1"}, molecules := {}, mode := "default" ], program p());
+ecolis( [ num := 1, x := 300.0, y := 0.0, r := 10.0, strain := "wt", plasmids := {}, molecules := {}, mode := "default" ], program p());

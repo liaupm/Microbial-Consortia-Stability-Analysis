@@ -1,0 +1,5 @@
+gro executable is found in the gro folder
+
+in files you can find some example and also the gro files for all the models of the consortia used in this work
+
+be sure to CHANGE THE PATHS for the output csv files
