@@ -1,0 +1,171 @@
+
+
+
+//-------------------------------------------------------
+
+//#################################################
+//############# MOLECULES #########################
+//#################################################
+
+
+molecule([ name := "B1bact", expression_times := [mean_times := {t_deg, 46}] ]);
+
+molecule([ name := "A2bact", expression_times := [mean_times := {t_deg, 46}] ]);
+
+
+
+//-------------------------------------------------------
+
+//#################################################
+//############# LOGIC GATES #######################
+//#################################################
+
+
+gate([ name := "gaStrain1", function := "YES", input := {"Strain1"} ]); 
+
+gate([ name := "gaStrain2", function := "YES", input := {"Strain2"} ]);
+
+gate([ name := "gaB1", function := "YES", input := {"B1bact"} ]);
+
+gate([ name := "gaTrue", function := "TRUE", input := {} ]);
+
+gate([ name := "gaA2in", function := "AND", input := {"metStrain1_0_0", "-metStrain1_1_0"} ]);
+
+gate([ name := "gaTodo", function := "AND", input := {"metStrain1_0_0", "metStrain1_1_0"} ]);
+
+
+gate([ name := "pB1", function := "YES", input := {"-metStrain1_0_0"} ]);
+
+
+//-------------------------------------------------------
+
+//#################################################
+//############# PLASMIDS ##########################
+//#################################################
+
+
+operon([ name := "op1", gate := "pB1", output := {"B1bact"} ]);
+
+
+plasmid([ name := "p1", operons := {"op1"} ]);
+
+operon([ name := "op2", gate := "gaTrue", output := {"A2bact"} ]);
+
+plasmid([ name := "p2", operons := {"op2"} ]);
+
+
+
+//-------------------------------------------------------
+
+//#################################################
+//############# SIGNALS   #########################
+//#################################################
+
+
+signal([ name := "B1", kdiff := 0.6, kdeg := k_degB, pad := 10.0 ]);
+
+signal([ name := "A2", kdiff := 0.6, kdeg := k_degA, pad := 10.0 ]);
+
+
+//-------------------------------------------------------
+
+//#################################################
+//############# METABOLISM #########################
+//#################################################
+
+
+
+metabolism ([   name := "B1out",
+		gate := "gaB1",
+		flux := [ metabolite := "B1", f := [ bias := 0.1]	]				
+]);
+
+
+metabolism ([name := "metStrain1",
+		  gate := "gaStrain1",
+		  metabolites := {"A2", "B1", "biomass"},
+		  fluxes := {"A2in", "B1in", "biomass"},
+
+A2in := [metabolite := "A2",
+	   functions := {"f1", "f2"},
+	   f1 := [ metabolites := {"A2"}, metabolites_w :=     	   {-0.2}, bias := 0.5 ],
+	   f2 := [ bias := 0.0],
+	   tree := [ A2 := 0.3, up := "f1", low := "f2"]  ],
+
+B1in := [metabolite := "B1",
+	   functions := {"f3", "f4"},
+	   f3 := [ metabolites := {"B1"}, metabolites_w :=     	   {-0.2}, bias := 0.5 ],
+	   f4 := [ bias := 0.0],
+	   tree := [ B1 := 0.3, up := "f3", low := "f4"]  ],
+
+biomass := [ metabolite := "biomass",
+           f := [ fluxes := {"B1in"},
+           fluxes_w := {-0.05}, bias := 0.0 ] ]
+
+]);
+
+
+metabolism ([name := "metStrain2",
+	     gate := "gaStrain2",
+	     metabolites := {"A2"},
+	     fluxes := {"A2out"},
+A2out := [metabolite := "A2", f := [ bias := 0.4 ] ]
+]);
+
+
+//-------------------------------------------------------
+
+//#################################################
+//############# STRAINS ###########################
+//#################################################
+
+
+
+strain([ name := "Strain1", 
+		cell_growth := [ base_growth_rate_rdn := [ dist_params := {0.015, 0.0} ], metabolism_growth := 1 ] ]);
+
+	
+strain([ name := "Strain2", 
+		cell_growth := [ base_growth_rate_rdn := [ dist_params := {0.015, 0.0} ], metabolism_growth := 1 ] ]);	
+
+//-------------------------------------------------------
+
+//#################################################
+//############# COLORS ############################
+//#################################################
+
+
+
+// Azul oscuro
+color([ gate := "gaStrain1", channels := {0,0,0,255}, delta := 0]);
+
+// Azul claro
+color([ gate := "gaStrain2", channels := {176,12,0,169}, delta := 0]);
+
+//Verde
+color([ gate := "gaA2in", channels := {255,0,0,0}, delta := 0 ]);
+
+//Rojo
+color([ gate := "gaTodo", channels := {0,255,0,0}, delta := 0 ]);
+
+
+
+//-------------------------------------------------------
+
+//#################################################
+//############# OUTPUT ############################
+//#################################################
+
+
+output_timing := [ output_time_start := 0.0, output_time_stop := 1000000.0, period := 10 ];
+
+
+output([ path := output_path_name, file_name := output_file_name,
+						gate := "gaTrue",
+						population_level := 1,
+						timing := output_timing,
+						decimal_places := 2,
+						fields := {"molecule"}, molecule := {"Strain1", "Strain2"}]);
+
+
+
